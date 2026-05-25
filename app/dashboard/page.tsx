@@ -25,8 +25,10 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [selectedMonth, setSelectedMonth] = useState('Janeiro')
   const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     // Verificar autenticação
     if (!isAuthenticated()) {
       router.push('/login')
@@ -47,11 +49,17 @@ export default function DashboardPage() {
     try {
       setLoading(true)
       const [transactionsData, summaryData] = await Promise.all([
-        getTransactions(userId),
-        getDashboardSummary(userId),
+        getTransactions(userId).catch((err) => {
+          console.error('Erro ao carregar transações:', err)
+          return []
+        }),
+        getDashboardSummary(userId).catch((err) => {
+          console.error('Erro ao carregar resumo:', err)
+          return null
+        }),
       ])
 
-      setTransactions(transactionsData || [])
+      setTransactions(Array.isArray(transactionsData) ? transactionsData : [])
       setSummary(summaryData)
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
@@ -69,7 +77,7 @@ export default function DashboardPage() {
     router.push('/transactions/new')
   }
 
-  if (!isAuthenticated()) {
+  if (!mounted || !isAuthenticated()) {
     return null
   }
 
@@ -86,69 +94,77 @@ export default function DashboardPage() {
         {/* Content */}
         <div className="flex-1 overflow-y-auto bg-black">
           <div className="p-8 max-w-7xl mx-auto">
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <SummaryCard
-                title="Ganhos"
-                amount={summary?.total_earnings || 0}
-                icon={
-                  <TrendingUp className="w-6 h-6 text-green-400" />
-                }
-                bgColor="bg-gray-800"
-                iconBgColor="bg-green-500/20"
-              />
-              <SummaryCard
-                title="Gastos"
-                amount={summary?.total_expenses || 0}
-                icon={
-                  <TrendingDown className="w-6 h-6 text-red-400" />
-                }
-                bgColor="bg-gray-800"
-                iconBgColor="bg-red-500/20"
-              />
-              <SummaryCard
-                title="Saldo"
-                amount={summary?.net_balance || 0}
-                icon={
-                  <Wallet className="w-6 h-6 text-gray-400" />
-                }
-                bgColor="bg-gray-800"
-                iconBgColor="bg-gray-500/20"
-              />
-              <SummaryCard
-                title="Investimentos"
-                amount={summary?.total_investments || 0}
-                icon={
-                  <PiggyBank className="w-6 h-6 text-blue-400" />
-                }
-                bgColor="bg-gray-800"
-                iconBgColor="bg-blue-500/20"
-              />
-            </div>
-
-            {/* Transactions and Chart */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-              {/* Transactions Table */}
-              <div className="lg:col-span-2">
-                <TransactionsTable
-                  transactions={transactions}
-                  onAddNew={handleAddTransaction}
-                  onDelete={handleDeleteTransaction}
-                />
+            {loading ? (
+              <div className="flex items-center justify-center h-96">
+                <p className="text-gray-400">Carregando...</p>
               </div>
+            ) : (
+              <>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                  <SummaryCard
+                    title="Ganhos"
+                    amount={summary?.total_earnings || 0}
+                    icon={
+                      <TrendingUp className="w-6 h-6 text-green-400" />
+                    }
+                    bgColor="bg-gray-800"
+                    iconBgColor="bg-green-500/20"
+                  />
+                  <SummaryCard
+                    title="Gastos"
+                    amount={summary?.total_expenses || 0}
+                    icon={
+                      <TrendingDown className="w-6 h-6 text-red-400" />
+                    }
+                    bgColor="bg-gray-800"
+                    iconBgColor="bg-red-500/20"
+                  />
+                  <SummaryCard
+                    title="Saldo"
+                    amount={summary?.net_balance || 0}
+                    icon={
+                      <Wallet className="w-6 h-6 text-gray-400" />
+                    }
+                    bgColor="bg-gray-800"
+                    iconBgColor="bg-gray-500/20"
+                  />
+                  <SummaryCard
+                    title="Investimentos"
+                    amount={summary?.total_investments || 0}
+                    icon={
+                      <PiggyBank className="w-6 h-6 text-blue-400" />
+                    }
+                    bgColor="bg-gray-800"
+                    iconBgColor="bg-blue-500/20"
+                  />
+                </div>
 
-              {/* Chart */}
-              <div>
-                <TransactionChart
-                  earnings={summary?.total_earnings || 0}
-                  expenses={summary?.total_expenses || 0}
-                  investments={summary?.total_investments || 0}
-                />
-              </div>
-            </div>
+                {/* Transactions and Chart */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                  {/* Transactions Table */}
+                  <div className="lg:col-span-2">
+                    <TransactionsTable
+                      transactions={transactions}
+                      onAddNew={handleAddTransaction}
+                      onDelete={handleDeleteTransaction}
+                    />
+                  </div>
 
-            {/* Profile Card */}
-            <ProfileCard user={user} />
+                  {/* Chart */}
+                  <div>
+                    <TransactionChart
+                      earnings={summary?.total_earnings || 0}
+                      expenses={summary?.total_expenses || 0}
+                      investments={summary?.total_investments || 0}
+                    />
+                  </div>
+                </div>
+
+                {/* Profile Card */}
+                <ProfileCard user={user} />
+              </>
+            )}
           </div>
         </div>
       </div>
