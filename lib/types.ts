@@ -25,6 +25,20 @@ export interface DashboardSummary {
   net_balance: number
 }
 
+export interface DashboardSummaryAPI {
+  balance: number
+  totals: {
+    EARNING: number
+    EXPENSE: number
+    INVESTMENT: number
+  }
+  categories: Array<{
+    category: string
+    type: string
+    total: number
+  }>
+}
+
 export interface AuthToken {
   token: string
   user: User

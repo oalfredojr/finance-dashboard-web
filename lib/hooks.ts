@@ -8,6 +8,7 @@ import {
   User,
   Transaction,
   DashboardSummary,
+  DashboardSummaryAPI,
   CreateTransactionRequest,
 } from './types'
 
@@ -129,7 +130,13 @@ export const useDashboard = () => {
       const response = await api.get(`/transactions/dashboard/${userId}`, {
         params: filters,
       })
-      return response.data
+      const data: DashboardSummaryAPI = response.data
+      return {
+        total_earnings: data.totals.EARNING,
+        total_expenses: data.totals.EXPENSE,
+        total_investments: data.totals.INVESTMENT,
+        net_balance: data.balance,
+      }
     } catch (error) {
       // Mock data para testes
       console.warn('Usando dados mock para dashboard')
