@@ -40,30 +40,21 @@ export function Header({ selectedMonth = 'Janeiro', onMonthChange }: HeaderProps
   ]
 
   return (
-    <div className="bg-gray-900 border-b border-gray-800 px-8 py-6">
-      <div className="flex items-center justify-between">
-        {/* User greeting */}
+    <div className="bg-slate-950 border-b border-slate-800 px-8 py-6">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-gray-400 text-sm">Olá, {user?.first_name}</p>
+          <p className="text-sm uppercase tracking-[0.28em] text-slate-500">Visão geral</p>
+          <h1 className="mt-3 text-3xl font-semibold text-white">Olá, {user?.first_name}</h1>
+          <p className="mt-2 text-sm text-slate-400 max-w-xl">
+            Aqui está seu resumo financeiro do mês atual. Acompanhe ganhos, gastos e investimentos em um só lugar.
+          </p>
         </div>
 
-        {/* Center - Theme toggle and Month selector */}
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setIsDark(!isDark)}
-            className="p-2 hover:bg-gray-800 rounded-lg transition"
-          >
-            {isDark ? (
-              <Sun size={20} className="text-gray-400" />
-            ) : (
-              <Moon size={20} className="text-gray-400" />
-            )}
-          </button>
-
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <select
             value={selectedMonth}
             onChange={(e) => onMonthChange?.(e.target.value)}
-            className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 text-sm"
+            className="min-w-[180px] bg-slate-900 text-white px-4 py-3 rounded-2xl border border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-slate-700"
           >
             {months.map((month) => (
               <option key={month} value={month}>
@@ -71,16 +62,23 @@ export function Header({ selectedMonth = 'Janeiro', onMonthChange }: HeaderProps
               </option>
             ))}
           </select>
-        </div>
 
-        {/* Right - Logout button */}
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white transition"
-          title="Logout"
-        >
-          <LogOut size={20} />
-        </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsDark(!isDark)}
+              className="rounded-2xl bg-slate-900 p-3 text-slate-300 hover:bg-slate-800 transition"
+              aria-label="Toggle theme"
+            >
+              {isDark ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            <button
+              onClick={handleLogout}
+              className="rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-300 hover:border-slate-700 hover:text-white transition"
+            >
+              Sair
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )

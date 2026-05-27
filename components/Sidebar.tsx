@@ -10,46 +10,49 @@ export function Sidebar() {
   const isActive = (path: string) => pathname === path
 
   return (
-    <div className="w-64 bg-gray-950 min-h-screen p-6 border-r border-gray-800">
-      {/* Logo */}
-      <div className="mb-12">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="w-6 h-6 bg-green-500 rounded flex items-center justify-center">
-            <div className="w-4 h-4 bg-green-500 rounded grid grid-cols-2 gap-0.5">
-              <div className="bg-green-400"></div>
-              <div className="bg-green-400"></div>
-              <div className="bg-green-400"></div>
-              <div className="bg-green-400"></div>
-            </div>
+    <div className="w-72 bg-slate-950 min-h-screen p-6 border-r border-slate-800">
+      <div className="mb-10">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-black/10">
+            <div className="h-4 w-4 rounded-full bg-white/80" />
           </div>
-          <span className="text-white font-semibold">Simple Finance</span>
+          <div>
+            <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Control Finances</p>
+            <p className="text-white font-semibold">Painel</p>
+          </div>
         </div>
+        <p className="text-sm text-slate-400">
+          Acompanhe suas métricas e navegue entre análises de forma rápida.
+        </p>
       </div>
 
-      {/* Navigation */}
       <div className="space-y-2">
         <Link
           href="/dashboard"
-          className={`flex items-center gap-3 px-4 py-2 rounded-lg transition ${
+          className={`group flex items-center gap-3 rounded-3xl px-4 py-3 transition ${
             isActive('/dashboard')
-              ? 'bg-gray-800 text-white'
-              : 'text-gray-400 hover:bg-gray-800'
+              ? 'bg-slate-900 text-white shadow-inner shadow-black/10'
+              : 'text-slate-300 hover:bg-slate-900 hover:text-white'
           }`}
         >
-          <LayoutGrid size={20} />
-          <span>Dashboard</span>
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-800 text-slate-200 group-hover:bg-slate-700">
+            <LayoutGrid size={20} />
+          </span>
+          <span className="font-medium">Dashboard</span>
         </Link>
 
         <Link
           href="/transactions"
-          className={`flex items-center gap-3 px-4 py-2 rounded-lg transition ${
+          className={`group flex items-center gap-3 rounded-3xl px-4 py-3 transition ${
             isActive('/transactions')
-              ? 'bg-gray-800 text-white'
-              : 'text-gray-400 hover:bg-gray-800'
+              ? 'bg-slate-900 text-white shadow-inner shadow-black/10'
+              : 'text-slate-300 hover:bg-slate-900 hover:text-white'
           }`}
         >
-          <BarChart3 size={20} />
-          <span>Análise</span>
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-800 text-slate-200 group-hover:bg-slate-700">
+            <BarChart3 size={20} />
+          </span>
+          <span className="font-medium">Análise</span>
         </Link>
       </div>
     </div>

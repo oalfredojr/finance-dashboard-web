@@ -6,16 +6,18 @@ interface SummaryCardProps {
   title: string
   amount: number
   icon: ReactNode
-  bgColor: string
-  iconBgColor: string
+  bgClass: string
+  iconBgClass: string
+  iconColorClass: string
 }
 
 export function SummaryCard({
   title,
   amount,
   icon,
-  bgColor,
-  iconBgColor,
+  bgClass,
+  iconBgClass,
+  iconColorClass,
 }: SummaryCardProps) {
   const formattedAmount = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -23,13 +25,15 @@ export function SummaryCard({
   }).format(amount)
 
   return (
-    <div className={`${bgColor} rounded-lg p-6 flex items-center justify-between`}>
-      <div>
-        <p className="text-gray-400 text-sm mb-2">{title}</p>
-        <p className="text-white text-2xl font-semibold">{formattedAmount}</p>
-      </div>
-      <div className={`${iconBgColor} rounded-full p-4 flex items-center justify-center`}>
-        {icon}
+    <div className={`rounded-[2rem] p-6 shadow-lg shadow-black/10 ${bgClass}`}>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-white/80">{title}</p>
+          <p className="mt-4 text-3xl font-semibold text-white">{formattedAmount}</p>
+        </div>
+        <div className={`rounded-2xl p-4 ${iconBgClass} ${iconColorClass}`}>
+          {icon}
+        </div>
       </div>
     </div>
   )

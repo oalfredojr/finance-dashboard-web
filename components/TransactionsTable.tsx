@@ -28,15 +28,15 @@ export function TransactionsTable({
     switch (type) {
       case 'EARNING':
         return (
-          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+          <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
         )
       case 'EXPENSE':
         return (
-          <div className="w-3 h-3 rounded-full bg-red-500"></div>
+          <span className="inline-flex h-2.5 w-2.5 rounded-full bg-rose-400" />
         )
       case 'INVESTMENT':
         return (
-          <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+          <span className="inline-flex h-2.5 w-2.5 rounded-full bg-sky-400" />
         )
       default:
         return null
@@ -59,35 +59,50 @@ export function TransactionsTable({
     })
   }
 
+  const getAmountColor = (type: string) => {
+    switch (type) {
+      case 'EARNING':
+        return 'text-emerald-300'
+      case 'EXPENSE':
+        return 'text-rose-300'
+      case 'INVESTMENT':
+        return 'text-sky-300'
+      default:
+        return 'text-white'
+    }
+  }
+
   return (
-    <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+    <div className="bg-slate-950 rounded-[2rem] border border-slate-800 p-6 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.8)]">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-white text-xl font-semibold">Transações</h2>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+        <div>
+          <h2 className="text-white text-2xl font-semibold">Transações recentes</h2>
+          <p className="text-sm text-slate-500 mt-1">Veja os movimentos mais recentes da sua conta.</p>
+        </div>
         <button
           onClick={onAddNew}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+          className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
         >
           <Plus size={18} />
-          <span>Adicionar</span>
+          Adicionar
         </button>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="min-w-full border-separate border-spacing-y-3">
           <thead>
-            <tr className="border-b border-gray-800">
-              <th className="text-left py-4 px-4 text-gray-400 font-semibold text-sm">
-                Título
+            <tr>
+              <th className="text-left py-3 px-4 text-slate-400 font-semibold text-xs uppercase tracking-[0.2em]">
+                Descrição
               </th>
-              <th className="text-left py-4 px-4 text-gray-400 font-semibold text-sm">
+              <th className="text-left py-3 px-4 text-slate-400 font-semibold text-xs uppercase tracking-[0.2em]">
                 Data
               </th>
-              <th className="text-right py-4 px-4 text-gray-400 font-semibold text-sm">
-                Quantidade
+              <th className="text-right py-3 px-4 text-slate-400 font-semibold text-xs uppercase tracking-[0.2em]">
+                Valor
               </th>
-              <th className="text-right py-4 px-4 text-gray-400 font-semibold text-sm">
+              <th className="text-right py-3 px-4 text-slate-400 font-semibold text-xs uppercase tracking-[0.2em]">
                 Ação
               </th>
             </tr>
@@ -96,24 +111,27 @@ export function TransactionsTable({
             {transactions.map((transaction) => (
               <tr
                 key={transaction.id}
-                className="border-b border-gray-800 hover:bg-gray-800/50 transition"
+                className="bg-slate-900/80 backdrop-blur-sm transition hover:bg-slate-900"
               >
                 <td className="py-4 px-4">
                   <div className="flex items-center gap-3">
                     {getTypeIcon(transaction.type)}
-                    <span className="text-white">{transaction.name}</span>
+                    <div>
+                      <p className="text-white font-medium">{transaction.name}</p>
+                      <p className="text-slate-500 text-sm uppercase tracking-[0.16em]">
+                        {transaction.type.toLowerCase()}
+                      </p>
+                    </div>
                   </div>
                 </td>
-                <td className="py-4 px-4 text-gray-400">
-                  {formatDate(transaction.date)}
-                </td>
-                <td className="py-4 px-4 text-right text-white">
+                <td className="py-4 px-4 text-slate-400 text-sm">{formatDate(transaction.date)}</td>
+                <td className={`py-4 px-4 text-right text-sm font-semibold ${getAmountColor(transaction.type)}`}>
                   {formatCurrency(transaction.amount)}
                 </td>
                 <td className="py-4 px-4 text-right">
                   <button
                     onClick={() => onDelete?.(transaction.id)}
-                    className="inline-flex items-center justify-center p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded transition"
+                    className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-3 py-2 text-slate-400 transition hover:bg-rose-500/10 hover:text-rose-300"
                     title="Deletar transação"
                   >
                     <Trash2 size={18} />
@@ -127,7 +145,7 @@ export function TransactionsTable({
 
       {transactions.length === 0 && (
         <div className="text-center py-8">
-          <p className="text-gray-400">Nenhuma transação encontrada</p>
+          <p className="text-slate-500">Nenhuma transação encontrada</p>
         </div>
       )}
     </div>

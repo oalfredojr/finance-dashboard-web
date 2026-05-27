@@ -106,37 +106,41 @@ export default function DashboardPage() {
                     title="Ganhos"
                     amount={summary?.total_earnings || 0}
                     icon={
-                      <TrendingUp className="w-6 h-6 text-green-400" />
+                      <TrendingUp className="w-6 h-6" />
                     }
-                    bgColor="bg-gray-800"
-                    iconBgColor="bg-green-500/20"
+                    bgClass="bg-gradient-to-br from-emerald-500 to-teal-600"
+                    iconBgClass="bg-white/10"
+                    iconColorClass="text-emerald-100"
                   />
                   <SummaryCard
                     title="Gastos"
                     amount={summary?.total_expenses || 0}
                     icon={
-                      <TrendingDown className="w-6 h-6 text-red-400" />
+                      <TrendingDown className="w-6 h-6" />
                     }
-                    bgColor="bg-gray-800"
-                    iconBgColor="bg-red-500/20"
+                    bgClass="bg-gradient-to-br from-rose-500 to-red-600"
+                    iconBgClass="bg-white/10"
+                    iconColorClass="text-rose-100"
                   />
                   <SummaryCard
                     title="Saldo"
                     amount={summary?.net_balance || 0}
                     icon={
-                      <Wallet className="w-6 h-6 text-gray-400" />
+                      <Wallet className="w-6 h-6" />
                     }
-                    bgColor="bg-gray-800"
-                    iconBgColor="bg-gray-500/20"
+                    bgClass="bg-gradient-to-br from-slate-800 to-slate-900"
+                    iconBgClass="bg-white/10"
+                    iconColorClass="text-slate-200"
                   />
                   <SummaryCard
                     title="Investimentos"
                     amount={summary?.total_investments || 0}
                     icon={
-                      <PiggyBank className="w-6 h-6 text-blue-400" />
+                      <PiggyBank className="w-6 h-6" />
                     }
-                    bgColor="bg-gray-800"
-                    iconBgColor="bg-blue-500/20"
+                    bgClass="bg-gradient-to-br from-sky-500 to-blue-600"
+                    iconBgClass="bg-white/10"
+                    iconColorClass="text-sky-100"
                   />
                 </div>
 
