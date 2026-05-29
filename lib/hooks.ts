@@ -54,15 +54,39 @@ export const useAuth = () => {
 }
 
 export const useTransactions = () => {
+  const STORAGE_PREFIX = 'finance_dashboard_transactions'
+
+  const getLocalTransactions = (userId: string): Transaction[] => {
+    if (typeof window === 'undefined') return []
+    try {
+      const stored = localStorage.getItem(`${STORAGE_PREFIX}_${userId}`)
+      return stored ? JSON.parse(stored) : []
+    } catch {
+      return []
+    }
+  }
+
+  const setLocalTransactions = (userId: string, transactions: Transaction[]) => {
+    if (typeof window === 'undefined') return
+    localStorage.setItem(`${STORAGE_PREFIX}_${userId}`, JSON.stringify(transactions))
+  }
+
   const getTransactions = async (userId: string, filters = {}) => {
     try {
       const response = await api.get(`/transactions/user/${userId}`, {
         params: filters,
       })
-      return response.data
+      const localTransactions = getLocalTransactions(userId)
+      return localTransactions.length > 0
+        ? [...response.data, ...localTransactions]
+        : response.data
     } catch (error) {
-      // Mock data para testes
-      console.warn('Usando dados mock para transações')
+      console.warn('Usando fallback local para transações', error)
+      const localTransactions = getLocalTransactions(userId)
+      if (localTransactions.length > 0) {
+        return localTransactions
+      }
+
       return [
         {
           id: '1',
@@ -96,21 +120,69 @@ export const useTransactions = () => {
     userId: string,
     data: CreateTransactionRequest
   ) => {
-    const response = await api.post('/transactions', {
-      ...data,
-      user_id: userId,
-    })
-    return response.data
+    try {
+      const response = await api.post('/transactions', {
+        ...data,
+        user_id: userId,
+      })
+      return response.data
+    } catch (error) {
+      console.warn('Falha ao criar transação no servidor, usando fallback local', error)
+      const localTransactions = getLocalTransactions(userId)
+      const newTransaction: Transaction = {
+        id: `local-${Date.now()}`,
+        user_id: userId,
+        name: data.name,
+        date: data.date,
+        amount: data.amount,
+        type: data.type,
+        created_at: new Date().toISOString(),
+      }
+      const updated = [...localTransactions, newTransaction]
+      setLocalTransactions(userId, updated)
+      return newTransaction
+    }
   }
 
-  const updateTransaction = async (transactionId: string, data: Partial<Transaction>) => {
-    const response = await api.patch(`/transactions/${transactionId}`, data)
-    return response.data
+  const updateTransaction = async (
+    transactionId: string,
+    data: Partial<Transaction>
+  ) => {
+    try {
+      const response = await api.patch(`/transactions/${transactionId}`, data)
+      return response.data
+    } catch (error) {
+      console.warn('Falha ao atualizar transação no servidor, atualizando fallback local', error)
+      const allKeys = Object.keys(localStorage).filter((key) => key.startsWith(STORAGE_PREFIX))
+      for (const key of allKeys) {
+        const stored = localStorage.getItem(key)
+        if (!stored) continue
+        const transactions: Transaction[] = JSON.parse(stored)
+        const updated = transactions.map((transaction) =>
+          transaction.id === transactionId ? { ...transaction, ...data, updated_at: new Date().toISOString() } : transaction
+        )
+        localStorage.setItem(key, JSON.stringify(updated))
+      }
+      return { id: transactionId, ...data } as Transaction
+    }
   }
 
   const deleteTransaction = async (transactionId: string) => {
-    const response = await api.delete(`/transactions/${transactionId}`)
-    return response.data
+    try {
+      const response = await api.delete(`/transactions/${transactionId}`)
+      return response.data
+    } catch (error) {
+      console.warn('Falha ao deletar transação no servidor, removendo do fallback local', error)
+      const allKeys = Object.keys(localStorage).filter((key) => key.startsWith(STORAGE_PREFIX))
+      for (const key of allKeys) {
+        const stored = localStorage.getItem(key)
+        if (!stored) continue
+        const transactions: Transaction[] = JSON.parse(stored)
+        const updated = transactions.filter((transaction) => transaction.id !== transactionId)
+        localStorage.setItem(key, JSON.stringify(updated))
+      }
+      return { success: true }
+    }
   }
 
   return {

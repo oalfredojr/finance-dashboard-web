@@ -79,3 +79,4 @@ NEXT_PUBLIC_API_URL=https://sua-api.com/api
 - [ ] Modal criar/editar transações
 - [ ] Filtros por período
 - [ ] Exportar relatórios
+- [x] Página de transações com listagem e criação

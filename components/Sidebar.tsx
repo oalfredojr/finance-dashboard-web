@@ -7,7 +7,8 @@ import { LayoutGrid, BarChart3 } from 'lucide-react'
 export function Sidebar() {
   const pathname = usePathname()
 
-  const isActive = (path: string) => pathname === path
+  const isActive = (path: string) =>
+    pathname === path || pathname.startsWith(`${path}/`)
 
   return (
     <div className="w-72 bg-slate-950 min-h-screen p-6 border-r border-slate-800">
@@ -18,7 +19,6 @@ export function Sidebar() {
           </div>
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Control Finances</p>
-            <p className="text-white font-semibold">Painel</p>
           </div>
         </div>
         <p className="text-sm text-slate-400">
