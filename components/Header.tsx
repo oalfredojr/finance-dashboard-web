@@ -18,10 +18,26 @@ export function Header({ selectedMonth = 'Janeiro', onMonthChange }: HeaderProps
   useEffect(() => {
     const currentUser = getCurrentUser()
     setUser(currentUser)
+
+    if (typeof window !== 'undefined') {
+      const storedTheme = localStorage.getItem('theme')
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      const initialTheme = storedTheme || (prefersDark ? 'dark' : 'light')
+      const isDarkTheme = initialTheme === 'dark'
+      setIsDark(isDarkTheme)
+      document.body.classList.toggle('light', !isDarkTheme)
+    }
   }, [])
 
   const handleLogout = () => {
     logout()
+  }
+
+  const toggleTheme = () => {
+    const nextDark = !isDark
+    setIsDark(nextDark)
+    localStorage.setItem('theme', nextDark ? 'dark' : 'light')
+    document.body.classList.toggle('light', !nextDark)
   }
 
   const months = [
@@ -65,7 +81,7 @@ export function Header({ selectedMonth = 'Janeiro', onMonthChange }: HeaderProps
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setIsDark(!isDark)}
+              onClick={toggleTheme}
               className="rounded-2xl bg-slate-900 p-3 text-slate-300 hover:bg-slate-800 transition"
               aria-label="Toggle theme"
             >

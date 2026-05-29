@@ -83,36 +83,7 @@ export const useTransactions = () => {
     } catch (error) {
       console.warn('Usando fallback local para transações', error)
       const localTransactions = getLocalTransactions(userId)
-      if (localTransactions.length > 0) {
-        return localTransactions
-      }
-
-      return [
-        {
-          id: '1',
-          user_id: userId,
-          name: 'Freelance',
-          date: '2024-01-15',
-          amount: 5200,
-          type: 'EARNING',
-        },
-        {
-          id: '2',
-          user_id: userId,
-          name: 'Pizza',
-          date: '2024-01-09',
-          amount: 139.9,
-          type: 'EXPENSE',
-        },
-        {
-          id: '3',
-          user_id: userId,
-          name: 'Tesouro Direto',
-          date: '2024-01-12',
-          amount: 1000,
-          type: 'INVESTMENT',
-        },
-      ]
+      return localTransactions
     }
   }
 
@@ -210,13 +181,12 @@ export const useDashboard = () => {
         net_balance: data.balance,
       }
     } catch (error) {
-      // Mock data para testes
-      console.warn('Usando dados mock para dashboard')
+      console.warn('Usando dados mock para dashboard', error)
       return {
-        total_earnings: 5200,
-        total_expenses: 2000,
-        total_investments: 1000,
-        net_balance: 2200,
+        total_earnings: 0,
+        total_expenses: 0,
+        total_investments: 0,
+        net_balance: 0,
       }
     }
   }

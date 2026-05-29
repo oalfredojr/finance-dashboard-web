@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Sidebar,
@@ -10,22 +10,78 @@ import {
   TransactionChart,
   ProfileCard,
 } from '@/components'
-import { useAuth, useTransactions, useDashboard } from '@/lib/hooks'
+import { useAuth, useTransactions } from '@/lib/hooks'
 import { User, Transaction, DashboardSummary } from '@/lib/types'
 import { TrendingUp, TrendingDown, Wallet, PiggyBank } from 'lucide-react'
 
 export default function DashboardPage() {
   const router = useRouter()
   const { getCurrentUser, isAuthenticated } = useAuth()
-  const { getTransactions } = useTransactions()
-  const { getDashboardSummary } = useDashboard()
+  const { getTransactions, deleteTransaction } = useTransactions()
 
   const [user, setUser] = useState<User | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [selectedMonth, setSelectedMonth] = useState('Janeiro')
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
+  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null)
+
+  const computeSummaryFromTransactions = (transactionsList: Transaction[]): DashboardSummary => {
+    const totalEarnings = transactionsList
+      .filter((item) => item.type === 'EARNING')
+      .reduce((sum, item) => sum + item.amount, 0)
+
+    const totalExpenses = transactionsList
+      .filter((item) => item.type === 'EXPENSE')
+      .reduce((sum, item) => sum + item.amount, 0)
+
+    const totalInvestments = transactionsList
+      .filter((item) => item.type === 'INVESTMENT')
+      .reduce((sum, item) => sum + item.amount, 0)
+
+    return {
+      total_earnings: totalEarnings,
+      total_expenses: totalExpenses,
+      total_investments: totalInvestments,
+      net_balance: totalEarnings - totalExpenses,
+    }
+  }
+
+  const getMonthIndex = (monthName: string) => {
+    const months = [
+      'Janeiro',
+      'Fevereiro',
+      'Março',
+      'Abril',
+      'Maio',
+      'Junho',
+      'Julho',
+      'Agosto',
+      'Setembro',
+      'Outubro',
+      'Novembro',
+      'Dezembro',
+    ]
+    return months.indexOf(monthName)
+  }
+
+  const filterTransactionsByMonth = (transactionsList: Transaction[], monthName: string) => {
+    const monthIndex = getMonthIndex(monthName)
+    return transactionsList.filter((transaction) => {
+      const date = new Date(transaction.date)
+      return date.getMonth() === monthIndex
+    })
+  }
+
+  const filteredTransactions = useMemo(
+    () => filterTransactionsByMonth(transactions, selectedMonth),
+    [transactions, selectedMonth]
+  )
+
+  const summary = useMemo(
+    () => computeSummaryFromTransactions(filteredTransactions),
+    [filteredTransactions]
+  )
 
   useEffect(() => {
     setMounted(true)
@@ -48,19 +104,12 @@ export default function DashboardPage() {
   const loadData = async (userId: string) => {
     try {
       setLoading(true)
-      const [transactionsData, summaryData] = await Promise.all([
-        getTransactions(userId).catch((err) => {
-          console.error('Erro ao carregar transações:', err)
-          return []
-        }),
-        getDashboardSummary(userId).catch((err) => {
-          console.error('Erro ao carregar resumo:', err)
-          return null
-        }),
-      ])
+      const transactionsData = await getTransactions(userId).catch((err) => {
+        console.error('Erro ao carregar transações:', err)
+        return []
+      })
 
       setTransactions(Array.isArray(transactionsData) ? transactionsData : [])
-      setSummary(summaryData)
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
     } finally {
@@ -69,8 +118,26 @@ export default function DashboardPage() {
   }
 
   const handleDeleteTransaction = async (transactionId: string) => {
-    // TODO: Implementar delete
-    console.log('Deletar transação:', transactionId)
+    setTransactionToDelete(transactionId)
+  }
+
+  const confirmDeleteTransaction = async () => {
+    if (!user || !transactionToDelete) return
+
+    try {
+      setLoading(true)
+      await deleteTransaction(transactionToDelete)
+      setTransactionToDelete(null)
+      await loadData(user.id)
+    } catch (error) {
+      console.error('Erro ao deletar transação:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const cancelDeleteTransaction = () => {
+    setTransactionToDelete(null)
   }
 
   const handleAddTransaction = () => {
@@ -149,7 +216,7 @@ export default function DashboardPage() {
                   {/* Transactions Table */}
                   <div className="lg:col-span-2">
                     <TransactionsTable
-                      transactions={transactions}
+                      transactions={filteredTransactions}
                       onAddNew={handleAddTransaction}
                       onDelete={handleDeleteTransaction}
                     />
@@ -167,6 +234,31 @@ export default function DashboardPage() {
 
                 {/* Profile Card */}
                 <ProfileCard user={user} />
+
+                {transactionToDelete && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6">
+                    <div className="w-full max-w-md rounded-[2rem] border border-slate-700 bg-slate-950 p-8 shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+                      <h2 className="text-xl font-semibold text-white">Confirmar exclusão</h2>
+                      <p className="mt-3 text-slate-400">
+                        Tem certeza que deseja remover esta transação? Esta ação não pode ser desfeita.
+                      </p>
+                      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                        <button
+                          onClick={cancelDeleteTransaction}
+                          className="rounded-3xl border border-slate-700 bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:bg-slate-800"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={confirmDeleteTransaction}
+                          className="rounded-3xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400"
+                        >
+                          Confirmar exclusão
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
