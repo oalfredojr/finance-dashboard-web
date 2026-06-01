@@ -74,7 +74,7 @@ export function TransactionChart({
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(value: number | string) => formatCurrency(Number(value))}
+                  formatter={(value) => formatCurrency(Number(value ?? 0))}
                   contentStyle={{
                     backgroundColor: '#0f172a',
                     border: '1px solid #334155',

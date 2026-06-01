@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Sidebar,
@@ -29,7 +29,8 @@ export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [selectedMonth, setSelectedMonth] = useState('Janeiro')
   const [loading, setLoading] = useState(true)
-  const [mounted] = useState(() => typeof window !== 'undefined')
+  const [mounted, setMounted] = useState(false)
+  const loadingRef = useRef(false)
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null)
 
   const computeSummaryFromTransactions = useCallback((transactionsList: Transaction[]): DashboardSummary => {
@@ -88,6 +89,11 @@ export default function DashboardPage() {
   )
 
   const loadData = useCallback(async (userId: string) => {
+    if (loadingRef.current) {
+      return
+    }
+
+    loadingRef.current = true
     try {
       setLoading(true)
       const transactionsData = await getTransactions(userId).catch((err) => {
@@ -100,6 +106,7 @@ export default function DashboardPage() {
       console.error('Erro ao carregar dados:', error)
     } finally {
       setLoading(false)
+      loadingRef.current = false
     }
   }, [getTransactions])
 
@@ -109,7 +116,10 @@ export default function DashboardPage() {
   )
 
   useEffect(() => {
-    // Verificar autenticação e redirecionar quando necessário
+    Promise.resolve().then(() => setMounted(true))
+  }, [])
+
+  useEffect(() => {
     if (!isAuthenticated()) {
       router.push('/login')
       return
@@ -121,9 +131,8 @@ export default function DashboardPage() {
       return
     }
 
-    // Agendar em microtask para evitar render extra visível
     Promise.resolve().then(() => loadData(currentUser.id))
-  }, [getCurrentUser, isAuthenticated, loadData, router])
+  }, [isAuthenticated, getCurrentUser, loadData, router])
 
   const handleDeleteTransaction = async (transactionId: string) => {
     setTransactionToDelete(transactionId)
@@ -157,7 +166,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-screen">
+    <div suppressHydrationWarning className="flex h-screen">
       {/* Sidebar */}
       <Sidebar />
 

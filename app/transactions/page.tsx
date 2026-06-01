@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Sidebar, Header, TransactionsTable, ProfileCard } from '@/components'
 import { useAuth, useTransactions } from '@/lib/hooks'
@@ -20,11 +20,17 @@ export default function TransactionsPage() {
   })
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [selectedMonth, setSelectedMonth] = useState('Janeiro')
-  const [, setLoading] = useState(true)
-  const [mounted] = useState(() => typeof window !== 'undefined')
+  const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
+  const loadingRef = useRef(false)
   const [error, setError] = useState('')
 
   const loadTransactions = useCallback(async (userId: string) => {
+    if (loadingRef.current) {
+      return
+    }
+
+    loadingRef.current = true
     setLoading(true)
     setError('')
 
@@ -37,8 +43,13 @@ export default function TransactionsPage() {
       setTransactions([])
     } finally {
       setLoading(false)
+      loadingRef.current = false
     }
   }, [getTransactions])
+
+  useEffect(() => {
+    Promise.resolve().then(() => setMounted(true))
+  }, [])
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -52,9 +63,8 @@ export default function TransactionsPage() {
       return
     }
 
-    // Agendar em microtask para evitar render extra visível
     Promise.resolve().then(() => loadTransactions(currentUser.id))
-  }, [getCurrentUser, isAuthenticated, loadTransactions, router])
+  }, [isAuthenticated, getCurrentUser, loadTransactions, router])
 
   const handleDeleteTransaction = async (transactionId: string) => {
     if (!user) return
@@ -77,7 +87,7 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="flex h-screen">
+    <div suppressHydrationWarning className="flex h-screen">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />
@@ -105,11 +115,17 @@ export default function TransactionsPage() {
                 </div>
               )}
 
-              <TransactionsTable
-                transactions={transactions}
-                onAddNew={handleAddTransaction}
-                onDelete={handleDeleteTransaction}
-              />
+              {loading ? (
+                <div className="rounded-3xl border border-slate-700 bg-slate-950 p-8 text-center text-slate-300">
+                  Carregando transações...
+                </div>
+              ) : (
+                <TransactionsTable
+                  transactions={transactions}
+                  onAddNew={handleAddTransaction}
+                  onDelete={handleDeleteTransaction}
+                />
+              )}
 
               <ProfileCard user={user} />
             </div>
