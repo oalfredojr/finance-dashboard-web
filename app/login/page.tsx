@@ -19,11 +19,10 @@ export default function LoginPage() {
 
     try {
       await login({ email, password })
-    } catch (err: any) {
-      setError(
-        err.response?.data?.message ||
-          'Erro ao fazer login. Verifique suas credenciais.'
-      )
+    } catch (error) {
+      const errObj = error as { response?: { data?: { message?: string } } } | undefined
+      const message = errObj?.response?.data?.message || (error instanceof Error ? error.message : 'Erro ao fazer login. Verifique suas credenciais.')
+      setError(message)
     } finally {
       setLoading(false)
     }

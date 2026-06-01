@@ -54,11 +54,10 @@ export default function RegisterPage() {
         password,
       })
       router.push('/login')
-    } catch (err: any) {
-      setError(
-        err.response?.data?.message ||
-          'Erro ao criar conta. Tente novamente.'
-      )
+    } catch (error) {
+      const errObj = error as { response?: { data?: { message?: string } } } | undefined
+      const message = errObj?.response?.data?.message || (error instanceof Error ? error.message : 'Erro ao criar conta. Tente novamente.')
+      setError(message)
     } finally {
       setLoading(false)
     }

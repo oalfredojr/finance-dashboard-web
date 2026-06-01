@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Moon, Sun, LogOut } from 'lucide-react'
+import { useState, useLayoutEffect } from 'react'
+import { Moon, Sun } from 'lucide-react'
 import { useAuth } from '@/lib/hooks'
 import { User } from '@/lib/types'
 
@@ -11,22 +11,27 @@ interface HeaderProps {
 }
 
 export function Header({ selectedMonth = 'Janeiro', onMonthChange }: HeaderProps) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isDark, setIsDark] = useState(true)
   const { logout, getCurrentUser } = useAuth()
 
-  useEffect(() => {
-    const currentUser = getCurrentUser()
-    setUser(currentUser)
-
-    if (typeof window !== 'undefined') {
-      const storedTheme = localStorage.getItem('theme')
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      const initialTheme = storedTheme || (prefersDark ? 'dark' : 'light')
-      const isDarkTheme = initialTheme === 'dark'
-      setIsDark(isDarkTheme)
-      document.body.classList.toggle('light', !isDarkTheme)
+  const [user] = useState<User | null>(() => {
+    try {
+      return getCurrentUser()
+    } catch {
+      return null
     }
+  })
+
+  const [isDark, setIsDark] = useState<boolean>(true)
+
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return
+    const storedTheme = localStorage.getItem('theme')
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    const initialTheme = storedTheme || (prefersDark ? 'dark' : 'light')
+    const isDarkTheme = initialTheme === 'dark'
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsDark(isDarkTheme)
+    document.body.classList.toggle('light', !isDarkTheme)
   }, [])
 
   const handleLogout = () => {

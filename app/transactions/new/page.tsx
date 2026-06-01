@@ -35,30 +35,27 @@ export default function NewTransactionPage() {
   const { isAuthenticated, getCurrentUser } = useAuth()
   const { createTransaction } = useTransactions()
 
-  const [user, setUser] = useState<User | null>(null)
+  const [user] = useState<User | null>(() => {
+    try {
+      return getCurrentUser()
+    } catch {
+      return null
+    }
+  })
   const [name, setName] = useState('')
   const [date, setDate] = useState(today)
   const [amount, setAmount] = useState('')
   const [type, setType] = useState<'EARNING' | 'EXPENSE' | 'INVESTMENT'>('EARNING')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [mounted, setMounted] = useState(false)
+  const [mounted] = useState(() => typeof window !== 'undefined')
 
   useEffect(() => {
-    setMounted(true)
     if (!isAuthenticated()) {
       router.push('/login')
       return
     }
-
-    const currentUser = getCurrentUser()
-    if (!currentUser) {
-      router.push('/login')
-      return
-    }
-
-    setUser(currentUser)
-  }, [])
+  }, [isAuthenticated, router])
 
   const handleAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value
@@ -113,12 +110,10 @@ export default function NewTransactionPage() {
     try {
       await createTransaction(user.id, payload)
       router.push('/transactions')
-    } catch (err: any) {
-      console.error('Erro ao criar transação:', err)
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        'Não foi possível criar a transação. Tente novamente.'
+    } catch (error) {
+      console.error('Erro ao criar transação:', error)
+      const errObj = error as { response?: { data?: { message?: string } } } | undefined
+      const message = errObj?.response?.data?.message || (error instanceof Error ? error.message : 'Não foi possível criar a transação. Tente novamente.')
       setError(message)
     } finally {
       setLoading(false)

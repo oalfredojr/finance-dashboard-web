@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Sidebar,
@@ -19,14 +19,20 @@ export default function DashboardPage() {
   const { getCurrentUser, isAuthenticated } = useAuth()
   const { getTransactions, deleteTransaction } = useTransactions()
 
-  const [user, setUser] = useState<User | null>(null)
+  const [user] = useState<User | null>(() => {
+    try {
+      return getCurrentUser()
+    } catch {
+      return null
+    }
+  })
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [selectedMonth, setSelectedMonth] = useState('Janeiro')
   const [loading, setLoading] = useState(true)
-  const [mounted, setMounted] = useState(false)
+  const [mounted] = useState(() => typeof window !== 'undefined')
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null)
 
-  const computeSummaryFromTransactions = (transactionsList: Transaction[]): DashboardSummary => {
+  const computeSummaryFromTransactions = useCallback((transactionsList: Transaction[]): DashboardSummary => {
     const totalEarnings = transactionsList
       .filter((item) => item.type === 'EARNING')
       .reduce((sum, item) => sum + item.amount, 0)
@@ -45,9 +51,9 @@ export default function DashboardPage() {
       total_investments: totalInvestments,
       net_balance: totalEarnings - totalExpenses,
     }
-  }
+  }, [])
 
-  const getMonthIndex = (monthName: string) => {
+  const getMonthIndex = useCallback((monthName: string) => {
     const months = [
       'Janeiro',
       'Fevereiro',
@@ -63,45 +69,25 @@ export default function DashboardPage() {
       'Dezembro',
     ]
     return months.indexOf(monthName)
-  }
+  }, [])
 
-  const filterTransactionsByMonth = (transactionsList: Transaction[], monthName: string) => {
-    const monthIndex = getMonthIndex(monthName)
-    return transactionsList.filter((transaction) => {
-      const date = new Date(transaction.date)
-      return date.getMonth() === monthIndex
-    })
-  }
+  const filterTransactionsByMonth = useCallback(
+    (transactionsList: Transaction[], monthName: string) => {
+      const monthIndex = getMonthIndex(monthName)
+      return transactionsList.filter((transaction) => {
+        const date = new Date(transaction.date)
+        return date.getMonth() === monthIndex
+      })
+    },
+    [getMonthIndex]
+  )
 
   const filteredTransactions = useMemo(
     () => filterTransactionsByMonth(transactions, selectedMonth),
-    [transactions, selectedMonth]
+    [transactions, selectedMonth, filterTransactionsByMonth]
   )
 
-  const summary = useMemo(
-    () => computeSummaryFromTransactions(filteredTransactions),
-    [filteredTransactions]
-  )
-
-  useEffect(() => {
-    setMounted(true)
-    // Verificar autenticação
-    if (!isAuthenticated()) {
-      router.push('/login')
-      return
-    }
-
-    const currentUser = getCurrentUser()
-    if (!currentUser) {
-      router.push('/login')
-      return
-    }
-
-    setUser(currentUser)
-    loadData(currentUser.id)
-  }, [])
-
-  const loadData = async (userId: string) => {
+  const loadData = useCallback(async (userId: string) => {
     try {
       setLoading(true)
       const transactionsData = await getTransactions(userId).catch((err) => {
@@ -115,7 +101,29 @@ export default function DashboardPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [getTransactions])
+
+  const summary = useMemo(
+    () => computeSummaryFromTransactions(filteredTransactions),
+    [filteredTransactions, computeSummaryFromTransactions]
+  )
+
+  useEffect(() => {
+    // Verificar autenticação e redirecionar quando necessário
+    if (!isAuthenticated()) {
+      router.push('/login')
+      return
+    }
+
+    const currentUser = getCurrentUser()
+    if (!currentUser) {
+      router.push('/login')
+      return
+    }
+
+    // Agendar em microtask para evitar render extra visível
+    Promise.resolve().then(() => loadData(currentUser.id))
+  }, [getCurrentUser, isAuthenticated, loadData, router])
 
   const handleDeleteTransaction = async (transactionId: string) => {
     setTransactionToDelete(transactionId)
@@ -144,7 +152,7 @@ export default function DashboardPage() {
     router.push('/transactions/new')
   }
 
-  if (!mounted || !isAuthenticated()) {
+  if (!mounted) {
     return null
   }
 

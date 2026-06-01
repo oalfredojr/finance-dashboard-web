@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Sidebar, Header, TransactionsTable, ProfileCard } from '@/components'
 import { useAuth, useTransactions } from '@/lib/hooks'
@@ -11,32 +11,20 @@ export default function TransactionsPage() {
   const { isAuthenticated, getCurrentUser } = useAuth()
   const { getTransactions, deleteTransaction } = useTransactions()
 
-  const [user, setUser] = useState<User | null>(null)
+  const [user] = useState<User | null>(() => {
+    try {
+      return getCurrentUser()
+    } catch {
+      return null
+    }
+  })
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [selectedMonth, setSelectedMonth] = useState('Janeiro')
-  const [loading, setLoading] = useState(true)
-  const [mounted, setMounted] = useState(false)
+  const [, setLoading] = useState(true)
+  const [mounted] = useState(() => typeof window !== 'undefined')
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    setMounted(true)
-
-    if (!isAuthenticated()) {
-      router.push('/login')
-      return
-    }
-
-    const currentUser = getCurrentUser()
-    if (!currentUser) {
-      router.push('/login')
-      return
-    }
-
-    setUser(currentUser)
-    loadTransactions(currentUser.id)
-  }, [])
-
-  const loadTransactions = async (userId: string) => {
+  const loadTransactions = useCallback(async (userId: string) => {
     setLoading(true)
     setError('')
 
@@ -50,7 +38,23 @@ export default function TransactionsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [getTransactions])
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push('/login')
+      return
+    }
+
+    const currentUser = getCurrentUser()
+    if (!currentUser) {
+      router.push('/login')
+      return
+    }
+
+    // Agendar em microtask para evitar render extra visível
+    Promise.resolve().then(() => loadTransactions(currentUser.id))
+  }, [getCurrentUser, isAuthenticated, loadTransactions, router])
 
   const handleDeleteTransaction = async (transactionId: string) => {
     if (!user) return
@@ -68,7 +72,7 @@ export default function TransactionsPage() {
     router.push('/transactions/new')
   }
 
-  if (!mounted || !isAuthenticated()) {
+  if (!mounted) {
     return null
   }
 
@@ -113,5 +117,5 @@ export default function TransactionsPage() {
         </div>
       </div>
     </div>
-  )
+    )
 }

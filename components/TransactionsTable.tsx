@@ -1,15 +1,7 @@
 'use client'
 
 import { Transaction } from '@/lib/types'
-import {
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  Trash2,
-  Plus,
-  ExternalLink,
-} from 'lucide-react'
-import { useState } from 'react'
+import { Trash2, Plus } from 'lucide-react'
 
 interface TransactionsTableProps {
   transactions: Transaction[]
@@ -22,7 +14,7 @@ export function TransactionsTable({
   onAddNew,
   onDelete,
 }: TransactionsTableProps) {
-  const [deleteId, setDeleteId] = useState<string | null>(null)
+  
 
   const getTypeIcon = (type: string) => {
     switch (type) {
