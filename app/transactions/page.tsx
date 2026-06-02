@@ -19,7 +19,24 @@ export default function TransactionsPage() {
     }
   })
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [selectedMonth, setSelectedMonth] = useState('Janeiro')
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const months = [
+      'Janeiro',
+      'Fevereiro',
+      'Março',
+      'Abril',
+      'Maio',
+      'Junho',
+      'Julho',
+      'Agosto',
+      'Setembro',
+      'Outubro',
+      'Novembro',
+      'Dezembro',
+    ]
+    const now = new Date()
+    return months[now.getMonth()]
+  })
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
   const loadingRef = useRef(false)
