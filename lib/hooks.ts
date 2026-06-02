@@ -125,6 +125,14 @@ export const useTransactions = () => {
           ...data,
           user_id: userId,
         })
+        // Update local cache so UI reflects the new transaction immediately
+        try {
+          const localTransactions = getLocalTransactions(userId)
+          const updated = [...localTransactions, response.data]
+          setLocalTransactions(userId, updated)
+        } catch (err) {
+          // ignore local cache errors
+        }
         return response.data
       } catch (error) {
         console.warn('Falha ao criar transação no servidor, usando fallback local', error)
@@ -150,6 +158,21 @@ export const useTransactions = () => {
     async (transactionId: string, data: Partial<Transaction>) => {
       try {
         const response = await api.patch(`/transactions/${transactionId}`, data)
+        // Update local cache entries to reflect server change
+        try {
+          const allKeys = Object.keys(localStorage).filter((key) => key.startsWith(STORAGE_PREFIX))
+          for (const key of allKeys) {
+            const stored = localStorage.getItem(key)
+            if (!stored) continue
+            const transactions: Transaction[] = JSON.parse(stored)
+            const updated = transactions.map((transaction) =>
+              transaction.id === transactionId ? { ...transaction, ...response.data, updated_at: new Date().toISOString() } : transaction
+            )
+            localStorage.setItem(key, JSON.stringify(updated))
+          }
+        } catch (err) {
+          // ignore local cache errors
+        }
         return response.data
       } catch (error) {
         console.warn('Falha ao atualizar transação no servidor, atualizando fallback local', error)
@@ -172,6 +195,19 @@ export const useTransactions = () => {
   const deleteTransaction = useCallback(async (transactionId: string) => {
     try {
       const response = await api.delete(`/transactions/${transactionId}`)
+      // remove from local cache as well
+      try {
+        const allKeys = Object.keys(localStorage).filter((key) => key.startsWith(STORAGE_PREFIX))
+        for (const key of allKeys) {
+          const stored = localStorage.getItem(key)
+          if (!stored) continue
+          const transactions: Transaction[] = JSON.parse(stored)
+          const updated = transactions.filter((transaction) => transaction.id !== transactionId)
+          localStorage.setItem(key, JSON.stringify(updated))
+        }
+      } catch (err) {
+        // ignore local cache errors
+      }
       return response.data
     } catch (error) {
       console.warn('Falha ao deletar transação no servidor, removendo do fallback local', error)
