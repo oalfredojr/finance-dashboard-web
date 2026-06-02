@@ -8,11 +8,10 @@ import {
   SummaryCard,
   TransactionsTable,
   TransactionChart,
-  ProfileCard,
 } from '@/components'
 import { useAuth, useTransactions } from '@/lib/hooks'
 import { User, Transaction, DashboardSummary } from '@/lib/types'
-import { TrendingUp, TrendingDown, Wallet, PiggyBank } from 'lucide-react'
+import { DollarSign, Slash, Wallet, PiggyBank } from 'lucide-react'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -127,6 +126,38 @@ export default function DashboardPage() {
     }
   }, [getTransactions])
 
+  const handleExportTransactions = () => {
+    if (!user) return
+    const rows = [
+      ['Título', 'Data', 'Tipo', 'Quantidade'],
+      ...filteredTransactions.map((transaction) => [
+        transaction.name,
+        new Date(transaction.date).toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        }),
+        transaction.type === 'EARNING'
+          ? 'Ganho'
+          : transaction.type === 'EXPENSE'
+          ? 'Gasto'
+          : 'Investimento',
+        transaction.amount.toFixed(2).replace('.', ','),
+      ]),
+    ]
+
+    const csvContent = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `transacoes_${user.first_name.toLowerCase()}_${user.last_name.toLowerCase()}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   const summary = useMemo(
     () => computeSummaryFromTransactions(filteredTransactions),
     [filteredTransactions, computeSummaryFromTransactions]
@@ -150,10 +181,6 @@ export default function DashboardPage() {
 
     Promise.resolve().then(() => loadData(currentUser.id))
   }, [isAuthenticated, getCurrentUser, loadData, router])
-
-  const handleDeleteTransaction = async (transactionId: string) => {
-    setTransactionToDelete(transactionId)
-  }
 
   const confirmDeleteTransaction = async () => {
     if (!user || !transactionToDelete) return
@@ -202,26 +229,26 @@ export default function DashboardPage() {
             ) : (
               <>
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                   <SummaryCard
                     title="Ganhos"
                     amount={summary?.total_earnings || 0}
                     icon={
-                      <TrendingUp className="w-6 h-6" />
+                      <DollarSign className="w-6 h-6" />
                     }
-                    bgClass="bg-gradient-to-br from-emerald-500 to-teal-600"
-                    iconBgClass="bg-white/10"
-                    iconColorClass="text-emerald-100"
+                    bgClass="bg-emerald-950"
+                    iconBgClass="bg-emerald-700"
+                    iconColorClass="text-emerald-200"
                   />
                   <SummaryCard
                     title="Gastos"
                     amount={summary?.total_expenses || 0}
                     icon={
-                      <TrendingDown className="w-6 h-6" />
+                      <Slash className="w-6 h-6" />
                     }
-                    bgClass="bg-gradient-to-br from-rose-500 to-red-600"
-                    iconBgClass="bg-white/10"
-                    iconColorClass="text-rose-100"
+                    bgClass="bg-rose-950"
+                    iconBgClass="bg-rose-700"
+                    iconColorClass="text-rose-200"
                   />
                   <SummaryCard
                     title="Saldo"
@@ -229,8 +256,8 @@ export default function DashboardPage() {
                     icon={
                       <Wallet className="w-6 h-6" />
                     }
-                    bgClass="bg-gradient-to-br from-slate-800 to-slate-900"
-                    iconBgClass="bg-white/10"
+                    bgClass="bg-slate-900"
+                    iconBgClass="bg-slate-800"
                     iconColorClass="text-slate-200"
                   />
                   <SummaryCard
@@ -239,9 +266,9 @@ export default function DashboardPage() {
                     icon={
                       <PiggyBank className="w-6 h-6" />
                     }
-                    bgClass="bg-gradient-to-br from-sky-500 to-blue-600"
-                    iconBgClass="bg-white/10"
-                    iconColorClass="text-sky-100"
+                    bgClass="bg-sky-950"
+                    iconBgClass="bg-sky-700"
+                    iconColorClass="text-sky-200"
                   />
                 </div>
 
@@ -250,9 +277,10 @@ export default function DashboardPage() {
                   {/* Transactions Table */}
                   <div className="lg:col-span-2">
                     <TransactionsTable
-                      transactions={filteredTransactions}
+                      transactions={filteredTransactions.slice(0, 5)}
                       onAddNew={handleAddTransaction}
-                      onDelete={handleDeleteTransaction}
+                      onExportCSV={handleExportTransactions}
+                      showActions={false}
                     />
                   </div>
 
@@ -265,9 +293,6 @@ export default function DashboardPage() {
                     />
                   </div>
                 </div>
-
-                {/* Profile Card */}
-                <ProfileCard user={user} />
 
                 {transactionToDelete && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6">

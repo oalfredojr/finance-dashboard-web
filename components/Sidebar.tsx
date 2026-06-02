@@ -3,9 +3,12 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutGrid, BarChart3 } from 'lucide-react'
+import { useAuth } from '@/lib/hooks'
 
 export function Sidebar() {
   const pathname = usePathname()
+  const { getCurrentUser } = useAuth()
+  const user = typeof window !== 'undefined' ? getCurrentUser() : null
 
   const isActive = (path: string) =>
     pathname === path || pathname.startsWith(`${path}/`)
@@ -18,7 +21,7 @@ export function Sidebar() {
             <div className="h-4 w-4 rounded-full bg-white/80" />
           </div>
           <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Control Finances</p>
+            <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Simple Finance</p>
           </div>
         </div>
         <p className="text-sm text-slate-400">
@@ -42,9 +45,9 @@ export function Sidebar() {
         </Link>
 
         <Link
-          href="/transactions"
+          href="/analise"
           className={`group flex items-center gap-3 rounded-3xl px-4 py-3 transition ${
-            isActive('/transactions')
+            isActive('/analise')
               ? 'bg-slate-900 text-white shadow-inner shadow-black/10'
               : 'text-slate-300 hover:bg-slate-900 hover:text-white'
           }`}
@@ -55,6 +58,20 @@ export function Sidebar() {
           <span className="font-medium">Análise</span>
         </Link>
       </div>
+
+      {user && (
+        <div className="mt-auto rounded-[2rem] border border-slate-800 bg-slate-950 p-5 text-white shadow-[0_30px_90px_-60px_rgba(0,0,0,0.8)]">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-lg font-semibold text-white">
+              {user.first_name.charAt(0)}{user.last_name.charAt(0)}
+            </div>
+            <div>
+              <p className="font-semibold">{user.first_name} {user.last_name}</p>
+              <p className="text-sm text-slate-400">{user.email}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

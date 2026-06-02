@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Sidebar, Header, TransactionsTable, ProfileCard } from '@/components'
+import { Sidebar, Header, TransactionsTable } from '@/components'
 import { useAuth, useTransactions } from '@/lib/hooks'
 import { Transaction, User } from '@/lib/types'
 
@@ -141,10 +141,39 @@ export default function TransactionsPage() {
                   transactions={transactions}
                   onAddNew={handleAddTransaction}
                   onDelete={handleDeleteTransaction}
+                  onExportCSV={() => {
+                    const csvRows = [
+                      ['Título', 'Data', 'Tipo', 'Quantidade'],
+                      ...transactions.map((transaction) => [
+                        transaction.name,
+                        new Date(transaction.date).toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        }),
+                        transaction.type === 'EARNING'
+                          ? 'Ganho'
+                          : transaction.type === 'EXPENSE'
+                          ? 'Gasto'
+                          : 'Investimento',
+                        transaction.amount.toFixed(2).replace('.', ','),
+                      ]),
+                    ]
+                    const csvContent = csvRows
+                      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+                      .join('\n')
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+                    const url = URL.createObjectURL(blob)
+                    const link = document.createElement('a')
+                    link.href = url
+                    link.setAttribute('download', `transacoes_${user?.first_name?.toLowerCase() || 'usuario'}.csv`)
+                    document.body.appendChild(link)
+                    link.click()
+                    document.body.removeChild(link)
+                    URL.revokeObjectURL(url)
+                  }}
                 />
               )}
-
-              <ProfileCard user={user} />
             </div>
           </div>
         </div>

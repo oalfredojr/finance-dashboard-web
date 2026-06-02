@@ -46,44 +46,45 @@ export function TransactionChart({
   return (
     <div className="bg-slate-950 rounded-[2rem] border border-slate-800 p-6 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.8)]">
       <div className="flex flex-col gap-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-white text-2xl font-semibold">Distribuição</h2>
-            <p className="text-sm text-slate-500 mt-1">Proporção dos seus ganhos, gastos e investimentos.</p>
-          </div>
-          <div className="rounded-2xl bg-slate-900 px-4 py-2 text-sm text-slate-300">
-            Total: {formatCurrency(total)}
-          </div>
+        <div>
+          <h2 className="text-white text-2xl font-semibold">Distribuição</h2>
+          <p className="text-sm text-slate-500 mt-1">Proporção dos seus ganhos, gastos e investimentos.</p>
         </div>
 
-        <div className="h-[320px] w-full">
+        <div className="relative h-[320px] w-full">
           {total > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={70}
-                  outerRadius={100}
-                  paddingAngle={4}
-                  dataKey="value"
-                >
-                  {data.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value) => formatCurrency(Number(value ?? 0))}
-                  contentStyle={{
-                    backgroundColor: '#0f172a',
-                    border: '1px solid #334155',
-                    borderRadius: '12px',
-                    color: '#fff',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            <>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={100}
+                    paddingAngle={4}
+                    dataKey="value"
+                  >
+                    {data.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => formatCurrency(Number(value ?? 0))}
+                    contentStyle={{
+                      backgroundColor: '#0f172a',
+                      border: '1px solid #334155',
+                      borderRadius: '12px',
+                      color: '#fff',
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                <p className="text-sm text-slate-400">Total</p>
+                <p className="text-3xl font-semibold text-white">{formatCurrency(total)}</p>
+              </div>
+            </>
           ) : (
             <div className="flex h-full items-center justify-center rounded-3xl border border-dashed border-slate-700 bg-slate-900/70 text-slate-500">
               Nenhuma transação disponível ainda.

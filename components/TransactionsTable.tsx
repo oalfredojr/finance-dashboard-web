@@ -1,18 +1,22 @@
 'use client'
 
 import { Transaction } from '@/lib/types'
-import { Trash2, Plus } from 'lucide-react'
+import { Trash2, Plus, ArrowUpRight } from 'lucide-react'
 
 interface TransactionsTableProps {
   transactions: Transaction[]
   onAddNew?: () => void
   onDelete?: (id: string) => void
+  onExportCSV?: () => void
+  showActions?: boolean
 }
 
 export function TransactionsTable({
   transactions,
   onAddNew,
   onDelete,
+  onExportCSV,
+  showActions = true,
 }: TransactionsTableProps) {
   
 
@@ -72,13 +76,24 @@ export function TransactionsTable({
           <h2 className="text-white text-2xl font-semibold">Transações recentes</h2>
           <p className="text-sm text-slate-500 mt-1">Veja os movimentos mais recentes da sua conta.</p>
         </div>
-        <button
-          onClick={onAddNew}
-          className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-        >
-          <Plus size={18} />
-          Adicionar
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          {onExportCSV && (
+            <button
+              onClick={onExportCSV}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800 transition"
+            >
+              <ArrowUpRight size={16} />
+              Exportar
+            </button>
+          )}
+          <button
+            onClick={onAddNew}
+            className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
+            <Plus size={18} />
+            Adicionar
+          </button>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -86,17 +101,19 @@ export function TransactionsTable({
           <thead>
             <tr>
               <th className="text-left py-3 px-4 text-slate-400 font-semibold text-xs uppercase tracking-[0.2em]">
-                Descrição
+                Título
               </th>
               <th className="text-left py-3 px-4 text-slate-400 font-semibold text-xs uppercase tracking-[0.2em]">
                 Data
               </th>
               <th className="text-right py-3 px-4 text-slate-400 font-semibold text-xs uppercase tracking-[0.2em]">
-                Valor
+                Quantidade
               </th>
-              <th className="text-right py-3 px-4 text-slate-400 font-semibold text-xs uppercase tracking-[0.2em]">
-                Ação
-              </th>
+              {showActions && (
+                <th className="text-right py-3 px-4 text-slate-400 font-semibold text-xs uppercase tracking-[0.2em]">
+                  Ação
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -111,7 +128,11 @@ export function TransactionsTable({
                     <div>
                       <p className="text-white font-medium">{transaction.name}</p>
                       <p className="text-slate-500 text-sm uppercase tracking-[0.16em]">
-                        {transaction.type.toLowerCase()}
+                        {transaction.type === 'EARNING'
+                          ? 'Ganho'
+                          : transaction.type === 'EXPENSE'
+                          ? 'Gasto'
+                          : 'Investimento'}
                       </p>
                     </div>
                   </div>
@@ -120,15 +141,17 @@ export function TransactionsTable({
                 <td className={`py-4 px-4 text-right text-sm font-semibold ${getAmountColor(transaction.type)}`}>
                   {formatCurrency(transaction.amount)}
                 </td>
-                <td className="py-4 px-4 text-right">
-                  <button
-                    onClick={() => onDelete?.(transaction.id)}
-                    className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-3 py-2 text-slate-400 transition hover:bg-rose-500/10 hover:text-rose-300"
-                    title="Deletar transação"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </td>
+                {showActions && (
+                  <td className="py-4 px-4 text-right">
+                    <button
+                      onClick={() => onDelete?.(transaction.id)}
+                      className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-3 py-2 text-slate-400 transition hover:bg-rose-500/10 hover:text-rose-300"
+                      title="Deletar transação"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

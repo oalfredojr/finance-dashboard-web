@@ -140,7 +140,7 @@ export const useTransactions = () => {
             mergedMap.set(t.id, t)
           }
           setLocalTransactions(userId, Array.from(mergedMap.values()))
-        } catch (err) {
+        } catch {
           // ignore local cache errors
         }
         return response.data
@@ -180,7 +180,7 @@ export const useTransactions = () => {
             )
             localStorage.setItem(key, JSON.stringify(updated))
           }
-        } catch (err) {
+        } catch {
           // ignore local cache errors
         }
         return response.data
@@ -215,7 +215,7 @@ export const useTransactions = () => {
           const updated = transactions.filter((transaction) => transaction.id !== transactionId)
           localStorage.setItem(key, JSON.stringify(updated))
         }
-      } catch (err) {
+      } catch {
         // ignore local cache errors
       }
       return response.data
