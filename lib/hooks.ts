@@ -97,9 +97,15 @@ export const useTransactions = () => {
       })
 
       currentState.backoffAttempts = 0
-      return getLocalTransactions(userId).length > 0
-        ? [...response.data, ...getLocalTransactions(userId)]
-        : response.data
+      const local = getLocalTransactions(userId)
+      if (local.length === 0) return response.data
+
+      // Merge server response and local cache, deduplicating by `id`
+      const mergedMap = new Map<string, Transaction>()
+      for (const t of [...response.data, ...local]) {
+        mergedMap.set(t.id, t)
+      }
+      return Array.from(mergedMap.values())
     } catch (error) {
       const typedError = error as { response?: { status?: number } }
       const statusCode = typedError?.response?.status
@@ -128,8 +134,12 @@ export const useTransactions = () => {
         // Update local cache so UI reflects the new transaction immediately
         try {
           const localTransactions = getLocalTransactions(userId)
-          const updated = [...localTransactions, response.data]
-          setLocalTransactions(userId, updated)
+          // Merge and dedupe so the same transaction isn't stored twice
+          const mergedMap = new Map<string, Transaction>()
+          for (const t of [...localTransactions, response.data]) {
+            mergedMap.set(t.id, t)
+          }
+          setLocalTransactions(userId, Array.from(mergedMap.values()))
         } catch (err) {
           // ignore local cache errors
         }
