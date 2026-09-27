@@ -52,7 +52,7 @@ export function TransactionChart({
           <p className="text-sm text-slate-500 mt-1">Proporção dos seus ganhos, gastos e investimentos.</p>
         </div>
 
-        <div className="relative h-[280px] w-full">
+        <div className="relative h-[300px] w-full">
           {total > 0 ? (
             <>
               <ResponsiveContainer width="100%" height="100%">
@@ -61,8 +61,8 @@ export function TransactionChart({
                     data={data}
                     cx="50%"
                     cy="50%"
-                    innerRadius={68}
-                    outerRadius={98}
+                    innerRadius={82}
+                    outerRadius={110}
                     paddingAngle={6}
                     dataKey="value"
                     startAngle={90}
@@ -86,7 +86,9 @@ export function TransactionChart({
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
                 <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Total</p>
-                <p className="text-3xl font-semibold text-white">{formatCurrency(total)}</p>
+                <p className="whitespace-nowrap text-xl font-semibold text-white">
+                  {formatCurrency(total)}
+                </p>
                 <p className="text-sm text-slate-400 mt-1">{dominant.name}</p>
               </div>
             </>
