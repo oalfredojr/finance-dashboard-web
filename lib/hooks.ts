@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useCallback, useRef } from 'react'
+import { useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import api from './api'
 import {
@@ -58,179 +58,29 @@ export const useAuth = () => {
 }
 
 export const useTransactions = () => {
-  const STORAGE_PREFIX = 'finance_dashboard_transactions'
-  const requestStateRef = useRef(new Map<string, { inProgress: boolean; backoffAttempts: number }>())
-
-  const getLocalTransactions = useCallback((userId: string): Transaction[] => {
-    if (typeof window === 'undefined') return []
-    try {
-      const stored = localStorage.getItem(`${STORAGE_PREFIX}_${userId}`)
-      return stored ? JSON.parse(stored) : []
-    } catch {
-      return []
-    }
-  }, [STORAGE_PREFIX])
-
-  const setLocalTransactions = useCallback(
-    (userId: string, transactions: Transaction[]) => {
-      if (typeof window === 'undefined') return
-      localStorage.setItem(`${STORAGE_PREFIX}_${userId}`, JSON.stringify(transactions))
-    },
-    [STORAGE_PREFIX]
-  )
-
   const getTransactions = useCallback(async (userId: string, filters = {}) => {
-    const requestState = requestStateRef.current
-    const currentState = requestState.get(userId) ?? { inProgress: false, backoffAttempts: 0 }
+    const response = await api.get(`/transactions/user/${userId}`, {
+      params: filters,
+    })
+    return response.data
+  }, [])
 
-    if (currentState.inProgress) {
-      console.warn('Requisição de transações já em andamento, usando fallback local')
-      return getLocalTransactions(userId)
-    }
+  const createTransaction = useCallback(async (userId: string, data: CreateTransactionRequest) => {
+    const response = await api.post('/transactions', {
+      ...data,
+      user_id: userId,
+    })
+    return response.data
+  }, [])
 
-    currentState.inProgress = true
-    requestState.set(userId, currentState)
-
-    try {
-      const response = await api.get(`/transactions/user/${userId}`, {
-        params: filters,
-      })
-
-      currentState.backoffAttempts = 0
-      const local = getLocalTransactions(userId)
-      if (local.length === 0) return response.data
-
-      // Merge server response and local cache, deduplicating by `id`
-      const mergedMap = new Map<string, Transaction>()
-      for (const t of [...response.data, ...local]) {
-        mergedMap.set(t.id, t)
-      }
-      return Array.from(mergedMap.values())
-    } catch (error) {
-      const typedError = error as { response?: { status?: number } }
-      const statusCode = typedError?.response?.status
-      console.warn('Usando fallback local para transações', error)
-
-      if (statusCode === 429 && currentState.backoffAttempts < 3) {
-        currentState.backoffAttempts += 1
-        const backoffMs = 500 * 2 ** (currentState.backoffAttempts - 1)
-        await new Promise((resolve) => setTimeout(resolve, backoffMs))
-      }
-
-      return getLocalTransactions(userId)
-    } finally {
-      currentState.inProgress = false
-      requestState.set(userId, currentState)
-    }
-  }, [getLocalTransactions])
-
-  const createTransaction = useCallback(
-    async (userId: string, data: CreateTransactionRequest) => {
-      try {
-        const response = await api.post('/transactions', {
-          ...data,
-          user_id: userId,
-        })
-        // Update local cache so UI reflects the new transaction immediately
-        try {
-          const localTransactions = getLocalTransactions(userId)
-          // Merge and dedupe so the same transaction isn't stored twice
-          const mergedMap = new Map<string, Transaction>()
-          for (const t of [...localTransactions, response.data]) {
-            mergedMap.set(t.id, t)
-          }
-          setLocalTransactions(userId, Array.from(mergedMap.values()))
-        } catch {
-          // ignore local cache errors
-        }
-        return response.data
-      } catch (error) {
-        console.warn('Falha ao criar transação no servidor, usando fallback local', error)
-        const localTransactions = getLocalTransactions(userId)
-        const newTransaction: Transaction = {
-          id: `local-${Date.now()}`,
-          user_id: userId,
-          name: data.name,
-          date: data.date,
-          amount: data.amount,
-          type: data.type,
-          created_at: new Date().toISOString(),
-        }
-        const updated = [...localTransactions, newTransaction]
-        setLocalTransactions(userId, updated)
-        return newTransaction
-      }
-    },
-    [getLocalTransactions, setLocalTransactions]
-  )
-
-  const updateTransaction = useCallback(
-    async (transactionId: string, data: Partial<Transaction>) => {
-      try {
-        const response = await api.patch(`/transactions/${transactionId}`, data)
-        // Update local cache entries to reflect server change
-        try {
-          const allKeys = Object.keys(localStorage).filter((key) => key.startsWith(STORAGE_PREFIX))
-          for (const key of allKeys) {
-            const stored = localStorage.getItem(key)
-            if (!stored) continue
-            const transactions: Transaction[] = JSON.parse(stored)
-            const updated = transactions.map((transaction) =>
-              transaction.id === transactionId ? { ...transaction, ...response.data, updated_at: new Date().toISOString() } : transaction
-            )
-            localStorage.setItem(key, JSON.stringify(updated))
-          }
-        } catch {
-          // ignore local cache errors
-        }
-        return response.data
-      } catch (error) {
-        console.warn('Falha ao atualizar transação no servidor, atualizando fallback local', error)
-        const allKeys = Object.keys(localStorage).filter((key) => key.startsWith(STORAGE_PREFIX))
-        for (const key of allKeys) {
-          const stored = localStorage.getItem(key)
-          if (!stored) continue
-          const transactions: Transaction[] = JSON.parse(stored)
-          const updated = transactions.map((transaction) =>
-            transaction.id === transactionId ? { ...transaction, ...data, updated_at: new Date().toISOString() } : transaction
-          )
-          localStorage.setItem(key, JSON.stringify(updated))
-        }
-        return { id: transactionId, ...data } as Transaction
-      }
-    },
-    []
-  )
+  const updateTransaction = useCallback(async (transactionId: string, data: Partial<Transaction>) => {
+    const response = await api.patch(`/transactions/${transactionId}`, data)
+    return response.data
+  }, [])
 
   const deleteTransaction = useCallback(async (transactionId: string) => {
-    try {
-      const response = await api.delete(`/transactions/${transactionId}`)
-      // remove from local cache as well
-      try {
-        const allKeys = Object.keys(localStorage).filter((key) => key.startsWith(STORAGE_PREFIX))
-        for (const key of allKeys) {
-          const stored = localStorage.getItem(key)
-          if (!stored) continue
-          const transactions: Transaction[] = JSON.parse(stored)
-          const updated = transactions.filter((transaction) => transaction.id !== transactionId)
-          localStorage.setItem(key, JSON.stringify(updated))
-        }
-      } catch {
-        // ignore local cache errors
-      }
-      return response.data
-    } catch (error) {
-      console.warn('Falha ao deletar transação no servidor, removendo do fallback local', error)
-      const allKeys = Object.keys(localStorage).filter((key) => key.startsWith(STORAGE_PREFIX))
-      for (const key of allKeys) {
-        const stored = localStorage.getItem(key)
-        if (!stored) continue
-        const transactions: Transaction[] = JSON.parse(stored)
-        const updated = transactions.filter((transaction) => transaction.id !== transactionId)
-        localStorage.setItem(key, JSON.stringify(updated))
-      }
-      return { success: true }
-    }
+    const response = await api.delete(`/transactions/${transactionId}`)
+    return response.data
   }, [])
 
   return useMemo(

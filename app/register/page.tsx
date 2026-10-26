@@ -103,7 +103,7 @@ export default function RegisterPage() {
 
           {/* First Name Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="register-first-name" className="block text-sm font-medium text-gray-300 mb-2">
               Primeiro Nome
             </label>
             <div className="relative">
@@ -112,7 +112,9 @@ export default function RegisterPage() {
                 size={18}
               />
               <input
+                id="register-first-name"
                 type="text"
+                autoComplete="given-name"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
@@ -124,7 +126,7 @@ export default function RegisterPage() {
 
           {/* Last Name Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="register-last-name" className="block text-sm font-medium text-gray-300 mb-2">
               Sobrenome
             </label>
             <div className="relative">
@@ -133,7 +135,9 @@ export default function RegisterPage() {
                 size={18}
               />
               <input
+                id="register-last-name"
                 type="text"
+                autoComplete="family-name"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
@@ -145,7 +149,7 @@ export default function RegisterPage() {
 
           {/* Email Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="register-email" className="block text-sm font-medium text-gray-300 mb-2">
               Email
             </label>
             <div className="relative">
@@ -154,7 +158,9 @@ export default function RegisterPage() {
                 size={18}
               />
               <input
+                id="register-email"
                 type="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -166,7 +172,7 @@ export default function RegisterPage() {
 
           {/* Password Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="register-password" className="block text-sm font-medium text-gray-300 mb-2">
               Senha
             </label>
             <div className="relative">
@@ -175,7 +181,9 @@ export default function RegisterPage() {
                 size={18}
               />
               <input
+                id="register-password"
                 type="password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -187,7 +195,7 @@ export default function RegisterPage() {
 
           {/* Confirm Password Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="register-confirm-password" className="block text-sm font-medium text-gray-300 mb-2">
               Confirmar Senha
             </label>
             <div className="relative">
@@ -196,7 +204,9 @@ export default function RegisterPage() {
                 size={18}
               />
               <input
+                id="register-confirm-password"
                 type="password"
+                autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required

@@ -59,7 +59,7 @@ export default function LoginPage() {
 
           {/* Email Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="login-email" className="block text-sm font-medium text-gray-300 mb-2">
               Email
             </label>
             <div className="relative">
@@ -68,7 +68,9 @@ export default function LoginPage() {
                 size={18}
               />
               <input
+                id="login-email"
                 type="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -80,7 +82,7 @@ export default function LoginPage() {
 
           {/* Password Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="login-password" className="block text-sm font-medium text-gray-300 mb-2">
               Senha
             </label>
             <div className="relative">
@@ -89,7 +91,9 @@ export default function LoginPage() {
                 size={18}
               />
               <input
+                id="login-password"
                 type="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required

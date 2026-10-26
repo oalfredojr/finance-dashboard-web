@@ -1,12 +1,13 @@
 'use client'
 
 import { Transaction } from '@/lib/types'
-import { Trash2, Plus, ArrowUpRight } from 'lucide-react'
+import { Trash2, Plus, ArrowUpRight, Pencil } from 'lucide-react'
 
 interface TransactionsTableProps {
   transactions: Transaction[]
   onAddNew?: () => void
   onDelete?: (id: string) => void
+  onEdit?: (id: string) => void
   onExportCSV?: () => void
   showActions?: boolean
 }
@@ -15,6 +16,7 @@ export function TransactionsTable({
   transactions,
   onAddNew,
   onDelete,
+  onEdit,
   onExportCSV,
   showActions = true,
 }: TransactionsTableProps) {
@@ -143,13 +145,26 @@ export function TransactionsTable({
                 </td>
                 {showActions && (
                   <td className="py-4 px-4 text-right">
-                    <button
-                      onClick={() => onDelete?.(transaction.id)}
-                      className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-3 py-2 text-slate-400 transition hover:bg-rose-500/10 hover:text-rose-300"
-                      title="Deletar transação"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                      <div className="inline-flex gap-2">
+                        {onEdit && (
+                          <button
+                            onClick={() => onEdit(transaction.id)}
+                            className="inline-flex items-center justify-center rounded-xl bg-slate-800 p-2 text-slate-300 hover:bg-slate-700"
+                            aria-label={`Editar ${transaction.name}`}
+                            title="Editar transação"
+                          >
+                            <Pencil size={18} />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => onDelete?.(transaction.id)}
+                          className="inline-flex items-center justify-center rounded-xl bg-slate-800 p-2 text-slate-400 transition hover:bg-rose-500/10 hover:text-rose-300"
+                          aria-label={`Excluir ${transaction.name}`}
+                          title="Excluir transação"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                   </td>
                 )}
               </tr>

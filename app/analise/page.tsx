@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Sidebar, Header } from '@/components'
 import { useAuth, useTransactions } from '@/lib/hooks'
 import { Transaction } from '@/lib/types'
+import { filterTransactionsByPeriod, MONTH_NAMES } from '@/lib/finance'
 import {
   BarChart,
   Bar,
@@ -18,20 +19,7 @@ import {
   Legend,
 } from 'recharts'
 
-const months = [
-  'Janeiro',
-  'Fevereiro',
-  'Março',
-  'Abril',
-  'Maio',
-  'Junho',
-  'Julho',
-  'Agosto',
-  'Setembro',
-  'Outubro',
-  'Novembro',
-  'Dezembro',
-]
+const months = MONTH_NAMES
 
 const monthLabels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
@@ -57,20 +45,24 @@ export default function AnalisePage() {
     const now = new Date()
     return months[now.getMonth()]
   })
+  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear())
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const loadingRef = useRef(false)
 
   const loadTransactions = useCallback(async (userId: string) => {
     if (loadingRef.current) return
     loadingRef.current = true
     setLoading(true)
+    setLoadError('')
     try {
       const data = await getTransactions(userId)
       setTransactions(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Erro ao carregar análise:', error)
       setTransactions([])
+      setLoadError('Não foi possível carregar a análise. Verifique a conexão e tente novamente.')
     } finally {
       setLoading(false)
       loadingRef.current = false
@@ -98,10 +90,7 @@ export default function AnalisePage() {
 
   const monthlyData = useMemo(() => {
     return months.map((monthName, index) => {
-      const monthTransactions = transactions.filter((transaction) => {
-        const transactionDate = new Date(transaction.date)
-        return transactionDate.getMonth() === index
-      })
+        const monthTransactions = filterTransactionsByPeriod(transactions, index, selectedYear)
       const totalEarnings = monthTransactions
         .filter((item) => item.type === 'EARNING')
         .reduce((sum, item) => sum + item.amount, 0)
@@ -120,16 +109,12 @@ export default function AnalisePage() {
         Saldo: totalEarnings - totalExpenses,
       }
     })
-  }, [transactions])
+  }, [transactions, selectedYear])
 
   const selectedMonthIndex = months.indexOf(selectedMonth)
   const selectedMonthTransactions = useMemo(
-    () =>
-      transactions.filter((transaction) => {
-        const date = new Date(transaction.date)
-        return date.getMonth() === selectedMonthIndex
-      }),
-    [transactions, selectedMonthIndex]
+    () => filterTransactionsByPeriod(transactions, selectedMonthIndex, selectedYear),
+    [transactions, selectedMonthIndex, selectedYear]
   )
 
   const highestExpense = useMemo(() => {
@@ -166,7 +151,7 @@ export default function AnalisePage() {
         ...acc,
         {
           month: month.month,
-          balance: previousBalance + month.Ganhos - month.Gastos,
+          balance: previousBalance + month.Ganhos - month.Gastos - month.Investimentos,
         },
       ]
     }, [])
@@ -187,7 +172,7 @@ export default function AnalisePage() {
       <div suppressHydrationWarning className="flex h-screen">
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <Header selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />
+          <Header selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} selectedYear={selectedYear} onYearChange={setSelectedYear} />
           <div className="flex-1 overflow-y-auto bg-black">
             <div className="p-8 max-w-7xl mx-auto">
               <div className="flex items-center justify-center h-96">
@@ -200,11 +185,34 @@ export default function AnalisePage() {
     )
   }
 
+  if (loadError) {
+    const currentUser = getCurrentUser()
+    return (
+      <div className="flex h-screen">
+        <Sidebar />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Header selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} selectedYear={selectedYear} onYearChange={setSelectedYear} />
+          <main className="flex flex-1 items-center justify-center p-8">
+            <div role="alert" className="max-w-lg rounded-2xl border border-rose-500/30 bg-rose-500/10 p-6 text-center text-rose-100">
+              <p>{loadError}</p>
+              <button
+                onClick={() => currentUser && loadTransactions(currentUser.id)}
+                className="mt-4 rounded-xl bg-rose-600 px-4 py-2 font-medium text-white hover:bg-rose-500"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          </main>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div suppressHydrationWarning className="flex h-screen">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />
+        <Header selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} selectedYear={selectedYear} onYearChange={setSelectedYear} />
         <div className="flex-1 overflow-y-auto bg-black">
           <div className="p-8 max-w-7xl mx-auto">
             <div className="flex flex-col gap-8">

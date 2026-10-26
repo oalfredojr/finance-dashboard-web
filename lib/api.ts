@@ -28,7 +28,8 @@ api.interceptors.response.use(
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token')
         localStorage.removeItem('user')
-        window.location.href = '/login'
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+        window.location.href = `${window.location.origin}/login`
       }
     }
     return Promise.reject(error)

@@ -5,8 +5,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth, useTransactions } from '@/lib/hooks'
 import { CreateTransactionRequest, User } from '@/lib/types'
+import { getLocalDateInputValue } from '@/lib/finance'
 
-const today = new Date().toISOString().slice(0, 10)
+const today = getLocalDateInputValue()
 
 const formatBRL = (value: number | string) => {
   const number = typeof value === 'string' ? Number(value.replace(/\D+/g, '').replace(/,/, '.')) : value
@@ -48,9 +49,10 @@ export default function NewTransactionPage() {
   const [type, setType] = useState<'EARNING' | 'EXPENSE' | 'INVESTMENT'>('EARNING')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [mounted] = useState(() => typeof window !== 'undefined')
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    Promise.resolve().then(() => setMounted(true))
     if (!isAuthenticated()) {
       router.push('/login')
       return
@@ -151,8 +153,9 @@ export default function NewTransactionPage() {
         <form onSubmit={handleSubmit} className="grid gap-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Descrição</label>
+              <label htmlFor="transaction-name" className="block text-sm font-medium text-slate-300 mb-2">Descrição</label>
               <input
+                id="transaction-name"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 className="w-full rounded-3xl border border-slate-800 bg-slate-900 px-4 py-3 text-white outline-none focus:border-emerald-500"
@@ -160,8 +163,9 @@ export default function NewTransactionPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Data</label>
+              <label htmlFor="transaction-date" className="block text-sm font-medium text-slate-300 mb-2">Data</label>
               <input
+                id="transaction-date"
                 type="date"
                 value={date}
                 onChange={(event) => setDate(event.target.value)}
@@ -172,8 +176,9 @@ export default function NewTransactionPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Valor</label>
+              <label htmlFor="transaction-amount" className="block text-sm font-medium text-slate-300 mb-2">Valor</label>
               <input
+                id="transaction-amount"
                 type="text"
                 inputMode="decimal"
                 value={amount}
@@ -185,8 +190,9 @@ export default function NewTransactionPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Tipo</label>
+              <label htmlFor="transaction-type" className="block text-sm font-medium text-slate-300 mb-2">Tipo</label>
               <select
+                id="transaction-type"
                 value={type}
                 onChange={(event) => setType(event.target.value as typeof type)}
                 className="w-full rounded-3xl border border-slate-800 bg-slate-900 px-4 py-3 text-white outline-none focus:border-emerald-500"

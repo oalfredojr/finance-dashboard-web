@@ -8,9 +8,16 @@ import { User } from '@/lib/types'
 interface HeaderProps {
   selectedMonth?: string
   onMonthChange?: (month: string) => void
+  selectedYear?: number
+  onYearChange?: (year: number) => void
 }
 
-export function Header({ selectedMonth = 'Janeiro', onMonthChange }: HeaderProps) {
+export function Header({
+  selectedMonth = 'Janeiro',
+  onMonthChange,
+  selectedYear = new Date().getFullYear(),
+  onYearChange,
+}: HeaderProps) {
   const { logout, getCurrentUser } = useAuth()
 
   const [user] = useState<User | null>(() => {
@@ -67,12 +74,13 @@ export function Header({ selectedMonth = 'Janeiro', onMonthChange }: HeaderProps
           <p className="text-sm uppercase tracking-[0.28em] text-slate-500">Visão geral</p>
           <h1 className="mt-3 text-3xl font-semibold text-white">Olá, {user?.first_name}</h1>
           <p className="mt-2 text-sm text-slate-400 max-w-xl">
-            Aqui está seu resumo financeiro do mês atual. Acompanhe ganhos, gastos e investimentos em um só lugar.
+            Resumo financeiro de {selectedMonth} de {selectedYear}. Acompanhe ganhos, gastos e investimentos em um só lugar.
           </p>
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <select
+            aria-label="Mês"
             value={selectedMonth}
             onChange={(e) => onMonthChange?.(e.target.value)}
             className="min-w-[180px] bg-slate-900 text-white px-4 py-3 rounded-2xl border border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-slate-700"
@@ -84,11 +92,24 @@ export function Header({ selectedMonth = 'Janeiro', onMonthChange }: HeaderProps
             ))}
           </select>
 
+          <select
+            aria-label="Ano"
+            value={selectedYear}
+            onChange={(event) => onYearChange?.(Number(event.target.value))}
+            className="min-w-[110px] bg-slate-900 text-white px-4 py-3 rounded-2xl border border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-slate-700"
+          >
+            {Array.from({ length: 11 }, (_, index) => new Date().getFullYear() - index).map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+
           <div className="flex items-center gap-2">
             <button
               onClick={toggleTheme}
               className="rounded-2xl bg-slate-900 p-3 text-slate-300 hover:bg-slate-800 transition"
-              aria-label="Toggle theme"
+              aria-label="Alternar tema"
             >
               {isDark ? <Sun size={20} /> : <Moon size={20} />}
             </button>

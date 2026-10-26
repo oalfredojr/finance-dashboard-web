@@ -10,13 +10,14 @@ import {
   TransactionChart,
 } from '@/components'
 import { useAuth, useTransactions } from '@/lib/hooks'
-import { User, Transaction, DashboardSummary } from '@/lib/types'
+import { User, Transaction } from '@/lib/types'
+import { filterTransactionsByPeriod, MONTH_NAMES, sanitizeCsvCell, summarizeTransactions } from '@/lib/finance'
 import { DollarSign, Slash, Wallet, PiggyBank } from 'lucide-react'
 
 export default function DashboardPage() {
   const router = useRouter()
   const { getCurrentUser, isAuthenticated } = useAuth()
-  const { getTransactions, deleteTransaction } = useTransactions()
+  const { getTransactions } = useTransactions()
 
   const [user] = useState<User | null>(() => {
     try {
@@ -27,81 +28,18 @@ export default function DashboardPage() {
   })
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [selectedMonth, setSelectedMonth] = useState(() => {
-    const months = [
-      'Janeiro',
-      'Fevereiro',
-      'Março',
-      'Abril',
-      'Maio',
-      'Junho',
-      'Julho',
-      'Agosto',
-      'Setembro',
-      'Outubro',
-      'Novembro',
-      'Dezembro',
-    ]
     const now = new Date()
-    return months[now.getMonth()]
+    return MONTH_NAMES[now.getMonth()]
   })
+  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear())
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [mounted, setMounted] = useState(false)
   const loadingRef = useRef(false)
-  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null)
-
-  const computeSummaryFromTransactions = useCallback((transactionsList: Transaction[]): DashboardSummary => {
-    const totalEarnings = transactionsList
-      .filter((item) => item.type === 'EARNING')
-      .reduce((sum, item) => sum + item.amount, 0)
-
-    const totalExpenses = transactionsList
-      .filter((item) => item.type === 'EXPENSE')
-      .reduce((sum, item) => sum + item.amount, 0)
-
-    const totalInvestments = transactionsList
-      .filter((item) => item.type === 'INVESTMENT')
-      .reduce((sum, item) => sum + item.amount, 0)
-
-    return {
-      total_earnings: totalEarnings,
-      total_expenses: totalExpenses,
-      total_investments: totalInvestments,
-      net_balance: totalEarnings - totalExpenses,
-    }
-  }, [])
-
-  const getMonthIndex = useCallback((monthName: string) => {
-    const months = [
-      'Janeiro',
-      'Fevereiro',
-      'Março',
-      'Abril',
-      'Maio',
-      'Junho',
-      'Julho',
-      'Agosto',
-      'Setembro',
-      'Outubro',
-      'Novembro',
-      'Dezembro',
-    ]
-    return months.indexOf(monthName)
-  }, [])
-
-  const filterTransactionsByMonth = useCallback(
-    (transactionsList: Transaction[], monthName: string) => {
-      const monthIndex = getMonthIndex(monthName)
-      return transactionsList.filter((transaction) => {
-        const date = new Date(transaction.date)
-        return date.getMonth() === monthIndex
-      })
-    },
-    [getMonthIndex]
-  )
 
   const filteredTransactions = useMemo(
-    () => filterTransactionsByMonth(transactions, selectedMonth),
-    [transactions, selectedMonth, filterTransactionsByMonth]
+    () => filterTransactionsByPeriod(transactions, MONTH_NAMES.indexOf(selectedMonth), selectedYear),
+    [transactions, selectedMonth, selectedYear]
   )
 
   const loadData = useCallback(async (userId: string) => {
@@ -110,16 +48,15 @@ export default function DashboardPage() {
     }
 
     loadingRef.current = true
+    setLoadError('')
     try {
       setLoading(true)
-      const transactionsData = await getTransactions(userId).catch((err) => {
-        console.error('Erro ao carregar transações:', err)
-        return []
-      })
-
+      const transactionsData = await getTransactions(userId)
       setTransactions(Array.isArray(transactionsData) ? transactionsData : [])
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
+      setTransactions([])
+      setLoadError('Não foi possível carregar os dados. Verifique a conexão e tente novamente.')
     } finally {
       setLoading(false)
       loadingRef.current = false
@@ -131,7 +68,7 @@ export default function DashboardPage() {
     const rows = [
       ['Título', 'Data', 'Tipo', 'Quantidade'],
       ...filteredTransactions.map((transaction) => [
-        transaction.name,
+          sanitizeCsvCell(transaction.name),
         new Date(transaction.date).toLocaleDateString('pt-BR', {
           day: '2-digit',
           month: 'short',
@@ -158,10 +95,7 @@ export default function DashboardPage() {
     URL.revokeObjectURL(url)
   }
 
-  const summary = useMemo(
-    () => computeSummaryFromTransactions(filteredTransactions),
-    [filteredTransactions, computeSummaryFromTransactions]
-  )
+  const summary = useMemo(() => summarizeTransactions(filteredTransactions), [filteredTransactions])
 
   useEffect(() => {
     Promise.resolve().then(() => setMounted(true))
@@ -182,25 +116,6 @@ export default function DashboardPage() {
     Promise.resolve().then(() => loadData(currentUser.id))
   }, [isAuthenticated, getCurrentUser, loadData, router])
 
-  const confirmDeleteTransaction = async () => {
-    if (!user || !transactionToDelete) return
-
-    try {
-      setLoading(true)
-      await deleteTransaction(transactionToDelete)
-      setTransactionToDelete(null)
-      await loadData(user.id)
-    } catch (error) {
-      console.error('Erro ao deletar transação:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const cancelDeleteTransaction = () => {
-    setTransactionToDelete(null)
-  }
-
   const handleAddTransaction = () => {
     router.push('/transactions/new')
   }
@@ -217,7 +132,7 @@ export default function DashboardPage() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <Header selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />
+        <Header selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} selectedYear={selectedYear} onYearChange={setSelectedYear} />
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto bg-black">
@@ -225,6 +140,16 @@ export default function DashboardPage() {
             {loading ? (
               <div className="flex items-center justify-center h-96">
                 <p className="text-gray-400">Carregando...</p>
+              </div>
+            ) : loadError ? (
+              <div role="alert" className="mx-auto mt-12 max-w-xl rounded-2xl border border-rose-500/30 bg-rose-500/10 p-6 text-center text-rose-100">
+                <p>{loadError}</p>
+                <button
+                  onClick={() => user && loadData(user.id)}
+                  className="mt-4 rounded-xl bg-rose-600 px-4 py-2 font-medium text-white hover:bg-rose-500"
+                >
+                  Tentar novamente
+                </button>
               </div>
             ) : (
               <>
@@ -294,30 +219,6 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {transactionToDelete && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6">
-                    <div className="w-full max-w-md rounded-[2rem] border border-slate-700 bg-slate-950 p-8 shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
-                      <h2 className="text-xl font-semibold text-white">Confirmar exclusão</h2>
-                      <p className="mt-3 text-slate-400">
-                        Tem certeza que deseja remover esta transação? Esta ação não pode ser desfeita.
-                      </p>
-                      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
-                        <button
-                          onClick={cancelDeleteTransaction}
-                          className="rounded-3xl border border-slate-700 bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:bg-slate-800"
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          onClick={confirmDeleteTransaction}
-                          className="rounded-3xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400"
-                        >
-                          Confirmar exclusão
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </>
             )}
           </div>
